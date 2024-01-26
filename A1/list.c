@@ -10,22 +10,14 @@ static Node nodes[LIST_MAX_NUM_NODES];
 static List heads[LIST_MAX_NUM_HEADS];
 
 //empty nodes
-static List emptyNodes;
+static List emptyNodes; //will iterate with head, append new free nodes to tail
+
+//declarations for private functions:
+void initialize();
+void printNode(Node* node);
+Node* getFreeNode();
 
 //public:
-
-void Print_all () {
-    for (int i = 0; i < LIST_MAX_NUM_NODES; i++) {
-        printNode(&nodes[i]);
-        printf("\n");
-    }
-}
-
-//finds an unused head (list) //TO DO
-List* getFreeHead() {
-    return &heads[0];
-}
-
 //creating a list -> we need to make the static section before doing anything
 //lists will act as "heads"
 List* List_create() {
@@ -42,11 +34,6 @@ List* List_create() {
     List* list = getFreeHead(); //should be set as empty
 
     return list;
-}
-
-//return NULL if no free nodes
-Node* Get_free_node () {
-    return NULL;
 }
 
 //0 -> success, -1 -> fail
@@ -81,22 +68,48 @@ void List_free (List* pList, FREE_FN pItemFreeFn) {
     
 }
 
+void Print_all () {
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++) {
+        printNode(&nodes[i]);
+        printf("\n");
+    }
+}
+
+void Print_list (List* pList) {
+    Node* current = emptyNodes.head;
+    while (current != NULL) {
+        printNode(current);
+        printf("\n");
+        current = current->next;
+    }
+}
+
 //private:
 //sets up nodes -> starts as freeNodes
 void initialize () {
     uninitialized = 0; //active
 
-    //allocate mem for nodes
+    //set up the empty nodes (a list of empty nodes), last->next point to NULL, first-> prev also NULL
+    //idea: use dummy nodes in front and back
+    //asumption: n > 1?
 
-    //set up the empty nodes (a list of empty nodes), last node will point to NULL
-    for (int i = 0; i < LIST_MAX_NUM_NODES - 1; i++) {
+    //first node 
+    nodes[0].next = &nodes[1];
+    nodes[0].prev = NULL;
+    nodes[0].empty = true;
+    nodes[0].val = 0; //check below
+
+    //middle nodes
+    for (int i = 1; i < LIST_MAX_NUM_NODES - 1; i++) {
         nodes[i].next = &nodes[i + 1];
+        nodes[i].prev = &nodes[i - 1];
         nodes[i].empty = true;
         nodes[i].val = 0; //should be NULL -> trivial since our node is empty for now
     }
 
     //last node
     Node *last = &nodes[LIST_MAX_NUM_NODES - 1];
+    last->prev = &nodes[LIST_MAX_NUM_NODES - 2];
     last->empty = true;
     last->next = NULL;
 
@@ -104,6 +117,26 @@ void initialize () {
     emptyNodes.head = &nodes[0];
     emptyNodes.tail = &nodes[LIST_MAX_NUM_NODES - 1];
     emptyNodes.n = LIST_MAX_NUM_NODES;
+}
+
+//return NULL if no free nodes
+Node* getFreeNode() {
+    if (emptyNodes.n == 0) {
+        return NULL;
+    }
+
+    //pop
+    Node* free = emptyNodes.head;
+    emptyNodes.head = emptyNodes.head->next;
+    free->next = NULL;
+    //prev, val should be NULL
+
+    return free;
+}
+
+//finds an unused head (list), none -> return NULL
+List* getFreeHead () {
+    return NULL;
 }
 
 void printNode (Node* node) {

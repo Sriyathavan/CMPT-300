@@ -5,7 +5,7 @@ int main() {
     List* testList = List_create();
     
 
-    Print_all();
+    Print_list(testList);
 
     return 0;
 }

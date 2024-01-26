@@ -128,5 +128,6 @@ void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg);
 
 //for now:
 void Print_all();
+void Print_list(List* pList);
 
 #endif
