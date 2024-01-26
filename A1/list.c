@@ -5,46 +5,50 @@
 //static variables
 static int uninitialized = 1, activeHeads = 0;
 
-//hold the location of start and end (or length)
-static void* startLocation;
-static void* endLocation;
+//statically allocated mem
+static Node nodes[LIST_MAX_NUM_NODES];
+static List heads[LIST_MAX_NUM_HEADS];
 
 //empty nodes
-static List* emptyNodes;
+static List emptyNodes;
 
-//sets up allocated memory
+//sets up nodes -> starts as freeNodes
 void initialize () {
     uninitialized = 0; //active
 
-    //allocate mem
-    startLocation = malloc(sizeof(Node) * LIST_MAX_NUM_NODES);
-    endLocation = startLocation + sizeof(Node) * LIST_MAX_NUM_NODES;
+    //allocate mem for nodes
 
-    //set up the emmpty nodes (a list of empty nodes)
-    List
+    //set up the empty nodes (a list of empty nodes), last node will point to NULL
+    for (int i = 0; i < LIST_MAX_NUM_NODES - 1; i++) {
+        nodes[i].next = &nodes[i + 1];
+        nodes[i].empty = true;
+        nodes[i].val = 0; //should be NULL -> trivial since our node is empty for now
+    }
 
-} //when program ends -> need to free mem
-
-//frees up allocated mem
-void destruct () {
-    free(startLocation);
+    emptyNodes.current = &nodes[0];
+    emptyNodes.head = &nodes[0];
+    emptyNodes.tail = &nodes[LIST_MAX_NUM_NODES - 1];
+    emptyNodes.n = LIST_MAX_NUM_NODES;
 }
 
 void printNode (Node* node) {
-    //safety:
-    // node
-    // printf("");
+    if (node->empty) {
+        printf("EMPTY");
+        return;
+    }
+
+    printf("VAL"); //TO DO
 }
 
-void printBlock () {
+void printAll () {
     for (int i = 0; i < LIST_MAX_NUM_NODES; i++) {
-        printNode(startLocation + i * sizeof(Node));
+        printNode(&nodes[i]);
     }
 }
 
 //finds an unused head (list)
 List* getFreeHead() {
-    
+    return NULL;
 }
 
 //creating a list -> we need to make the static section before doing anything
@@ -62,8 +66,6 @@ List* List_create() {
     //make the list (can't use new)
     List* list = getFreeHead();
 
-
-    
 }
 
 

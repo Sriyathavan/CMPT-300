@@ -12,9 +12,9 @@
 typedef struct Node_s Node;
 struct Node_s {
     // TODO: You should change this
-    Node* next, prev;
-    void* val; //should be 4 bytes?
-
+    Node *next, *prev;
+    void *val; //should be 4 bytes?
+    bool empty;
 };
 
 enum ListOutOfBounds {
@@ -24,7 +24,7 @@ enum ListOutOfBounds {
 typedef struct List_s List;
 struct List_s{
     // TODO: You should change this!
-    Node* current, head, tail;
+    Node *current, *head, *tail;
     int n; //length
 };
 
