@@ -10,7 +10,10 @@ static Node nodes[LIST_MAX_NUM_NODES];
 static List heads[LIST_MAX_NUM_HEADS];
 
 //empty nodes
-static List emptyNodes; //will iterate with head, append new free nodes to tail
+static List emptyNodes; //will take from head, append new free nodes to tail (basically a queue)
+//a List of nodes that contain List* pointers as their val
+//when connected to List -> free, diconnected -> empty
+static List emptyHeads;
 
 //declarations for private functions:
 void initialize();
@@ -47,7 +50,7 @@ int List_append(List* pList, void* pItem) {
     }
     
     //add val
-    free->next = NULL; //break from emptyNodes
+    free->next = NULL; //break from emptyNodes, prev should be NULL (we are taking from head)
     free->val = pItem;
     free->empty = false; //set as occupied
 
@@ -62,10 +65,8 @@ int List_append(List* pList, void* pItem) {
     //edit List data
     pList->tail = free;
     pList->n++;
-}
 
-void List_free (List* pList, FREE_FN pItemFreeFn) {
-    
+    return 0;
 }
 
 void Print_all () {
