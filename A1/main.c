@@ -2,12 +2,10 @@
 #include "list.h"
 
 int main() {
-    initialize();
     List* testList = List_create();
     
-    printf("Hello world");
 
-    destruct();
+    Print_all();
 
     return 0;
 }

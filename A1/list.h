@@ -26,6 +26,7 @@ struct List_s{
     // TODO: You should change this!
     Node *current, *head, *tail;
     int n; //length
+    bool empty;
 };
 
 // Maximum number of unique lists the system can support
@@ -34,7 +35,7 @@ struct List_s{
 
 // Maximum total number of nodes (statically allocated) to be shared across all lists
 // (You may modify this, but reset the value to 100 when handing in your assignment)
-#define LIST_MAX_NUM_NODES 100
+#define LIST_MAX_NUM_NODES 20
 
 // General Error Handling:
 // Client code is assumed never to call these functions with a NULL List pointer, or 
@@ -126,7 +127,6 @@ typedef bool (*COMPARATOR_FN)(void* pItem, void* pComparisonArg);
 void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg);
 
 //for now:
-void initialize();
-void destruct();
+void Print_all();
 
 #endif
