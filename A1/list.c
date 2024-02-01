@@ -20,6 +20,8 @@ void initializeNodes();
 Node* getFreeNode();
 List* getFreeHead();
 
+void sendFreeNodes(Node* start, Node* end);
+
 void printNode(Node* node);
 void printAll();
 void printList(List *pList);
@@ -56,18 +58,17 @@ void List_free(List* pList, FREE_FN pItemFreeFn) {
     }
 
     //append the nodes to the free pool of nodes
-    emptyNodes.tail->next = pList->head;
-    emptyNodes.tail = pList->tail;
+    sendFreeNodes(pList->head, pList->tail);
 
     //add the current head to the free pool of heads
-    pList->next = emptyHead;
+    pList->next = emptyHead; //trivialy, if NULL this will be okay
     emptyHead = pList;
 }
 
 //0 -> success, -1 -> fail
 int List_append(List* pList, void* pItem) {
     //find a free node
-    Node* free = Get_free_node();
+    Node* free = getFreeNode();
 
     //no nodes available
     if (free = NULL) {
@@ -92,6 +93,52 @@ int List_append(List* pList, void* pItem) {
     pList->n++;
 
     return 0;
+}
+
+void* List_remove(List* pList) {
+    //conditions:
+    //empty (current == LIST_OOB_START), before start, after start
+    if (pList->current == LIST_OOB_START || pList->current == LIST_OOB_END) {
+        return NULL;
+    }
+
+    //remove current item
+    void *item = pList->current->val;
+    Node *free = pList->current;
+
+    //conditions:
+    //n == 1: list is now empty
+    if (pList->n == 1) {
+        setEmpty(pList);
+        goto end;
+    }
+
+    //given: n > 1
+    //current == head: we are removing the head
+    if (pList->current == pList->head) {
+        pList->current = pList->head->next;
+        pList->head = pList->current;
+        goto end;
+    }
+
+    //current == tail: will go out of bounds, tail will have to be tail-> prev
+    if (pList->current == pList->tail) {
+        pList->current = LIST_OOB_END;
+        pList->tail = pList->tail->prev;
+        goto end;
+    }
+
+    //normal functionality
+    pList->current = pList->current->next;
+
+    end: {
+        //send free node back to pool
+        sendFreeNodes(free, free);
+        //update pList
+        pList->n++;
+    }
+
+    return item;
 }
 
 //private:
@@ -133,14 +180,14 @@ void initializeHeads () {
     //want each head to point the i + 1 (except last)
     for (int i = 0; i < LIST_MAX_NUM_HEADS - 1; i++) {
         heads[i].next = &heads[i + 1];
+        setEmpty(&heads[i]);
     }
 
     //last points to NULL
     heads[LIST_MAX_NUM_HEADS - 1].next = NULL;
+    setEmpty(&heads[LIST_MAX_NUM_HEADS]);
 
     emptyHead = &heads[0];
-
-    //set up the list that contains the headNodes that are free
 }
 
 //return NULL if no free nodes
@@ -158,6 +205,12 @@ Node* getFreeNode() {
     return free;
 }
 
+//add nodes back to the free nodes pool
+void sendFreeNodes(Node* start, Node* end) {
+    emptyNodes.tail->next = start;
+    emptyNodes.tail = end;
+}
+
 //finds an unused head (list), none -> return NULL
 List* getFreeHead () {
     //check if there are any heads left
@@ -170,6 +223,13 @@ List* getFreeHead () {
     emptyHead = emptyHead -> next;
 
     return free;
+}
+
+void setEmpty (List* pList) {
+    pList->current = LIST_OOB_START;
+    pList->head = NULL;
+    pList->tail = NULL;
+    pList->n = 0;
 }
 
 void printNode (Node* node) {
