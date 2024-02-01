@@ -21,6 +21,8 @@ Node* getFreeNode();
 List* getFreeHead();
 
 void sendFreeNodes(Node* start, Node* end);
+void setNext(Node* a, Node* b);
+void setEmpty(List* pList);
 
 void printNode(Node* node);
 void printAll();
@@ -85,7 +87,7 @@ int List_append(List* pList, void* pItem) {
         pList->current = pList->head = free; //tail is set later anyways
     } else {
         //last-> next = free
-        pList->tail->next = free;
+        setNext(pList->tail, free);
     }
     
     //edit List data
@@ -98,7 +100,7 @@ int List_append(List* pList, void* pItem) {
 void* List_remove(List* pList) {
     //conditions:
     //empty (current == LIST_OOB_START), before start, after start
-    if (pList->current == LIST_OOB_START || pList->current == LIST_OOB_END) {
+    if (pList->current == (Node*)LIST_OOB_START || pList->current == (Node*)LIST_OOB_END) {
         return NULL;
     }
 
@@ -123,12 +125,14 @@ void* List_remove(List* pList) {
 
     //current == tail: will go out of bounds, tail will have to be tail-> prev
     if (pList->current == pList->tail) {
-        pList->current = LIST_OOB_END;
+        pList->current = (Node*)LIST_OOB_END;
         pList->tail = pList->tail->prev;
         goto end;
     }
 
+    //given: !head, !tail, n > 1 means n >= 3
     //normal functionality
+    setNext(pList->current->prev, pList->current->next);
     pList->current = pList->current->next;
 
     end: {
@@ -211,6 +215,12 @@ void sendFreeNodes(Node* start, Node* end) {
     emptyNodes.tail = end;
 }
 
+//will link prev and next for 2 nodes
+void setNext (Node* a, Node* b) {
+    a->next = b;
+    b->prev = a;
+}
+
 //finds an unused head (list), none -> return NULL
 List* getFreeHead () {
     //check if there are any heads left
@@ -226,7 +236,7 @@ List* getFreeHead () {
 }
 
 void setEmpty (List* pList) {
-    pList->current = LIST_OOB_START;
+    pList->current = (Node*)LIST_OOB_START;
     pList->head = NULL;
     pList->tail = NULL;
     pList->n = 0;
