@@ -21,12 +21,13 @@ enum ListOutOfBounds {
     LIST_OOB_START,
     LIST_OOB_END
 };
+
 typedef struct List_s List;
 struct List_s{
     // TODO: You should change this!
     Node *current, *head, *tail;
+    List *next;
     int n; //length
-    bool empty;
 };
 
 // Maximum number of unique lists the system can support

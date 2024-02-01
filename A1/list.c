@@ -6,26 +6,33 @@
 static int uninitialized = 1, activeHeads = 0;
 
 //statically allocated mem
-static Node nodes[LIST_MAX_NUM_NODES];
-static List heads[LIST_MAX_NUM_HEADS];
-
 //empty nodes
-static List emptyNodes; //will take from head, append new free nodes to tail (basically a queue)
-//a List of nodes that contain List* pointers as their val
-//when connected to List -> free, diconnected -> empty
-static List emptyHeads;
+static List emptyNodes; //will take from head when removed, append new free nodes to tail (basically a queue)
+static Node nodes[LIST_MAX_NUM_NODES]; //array of nodes
+
+//when deleting push in front of emptyHead, if emptyHead = NULL -> no free heads
+List *emptyHead;
+static List heads[LIST_MAX_NUM_HEADS]; //array of heads
 
 //declarations for private functions:
-void initialize();
-void printNode(Node* node);
+void initializeHeads();
+void initializeNodes();
 Node* getFreeNode();
+List* getFreeHead();
+
+void printNode(Node* node);
+void printAll();
+void printList(List *pList);
 
 //public:
 //creating a list -> we need to make the static section before doing anything
 //lists will act as "heads"
 List* List_create() {
+    //check if the structures have been set up
     if (uninitialized) {
-        initialize();
+        initializeNodes();
+        initializeHeads();
+        uninitialized = 0; //intialization code will not run after first time
     }
 
     //check if we have room -> else: NULL
@@ -37,6 +44,24 @@ List* List_create() {
     List* list = getFreeHead(); //should be set as empty
 
     return list;
+}
+
+void List_free(List* pList, FREE_FN pItemFreeFn) {
+    //free each item in List
+    pList->current = pList->head;
+    while (pList->current != NULL) {
+        //takes pointer to the item to be freed
+        (*pItemFreeFn)(pList->current->val);
+        // pList->current->val = NULL; //clear pointer
+    }
+
+    //append the nodes to the free pool of nodes
+    emptyNodes.tail->next = pList->head;
+    emptyNodes.tail = pList->tail;
+
+    //add the current head to the free pool of heads
+    pList->next = emptyHead;
+    emptyHead = pList;
 }
 
 //0 -> success, -1 -> fail
@@ -55,7 +80,7 @@ int List_append(List* pList, void* pItem) {
     free->empty = false; //set as occupied
 
     //append, condition: empty list
-    if (pList->empty) {
+    if (pList->n == 0) {
         pList->current = pList->head = free; //tail is set later anyways
     } else {
         //last-> next = free
@@ -69,27 +94,9 @@ int List_append(List* pList, void* pItem) {
     return 0;
 }
 
-void Print_all () {
-    for (int i = 0; i < LIST_MAX_NUM_NODES; i++) {
-        printNode(&nodes[i]);
-        printf("\n");
-    }
-}
-
-void Print_list (List* pList) {
-    Node* current = emptyNodes.head;
-    while (current != NULL) {
-        printNode(current);
-        printf("\n");
-        current = current->next;
-    }
-}
-
 //private:
 //sets up nodes -> starts as freeNodes
-void initialize () {
-    uninitialized = 0; //active
-
+void initializeNodes () {
     //set up the empty nodes (a list of empty nodes), last->next point to NULL, first-> prev also NULL
     //idea: use dummy nodes in front and back
     //asumption: n > 1?
@@ -120,6 +127,22 @@ void initialize () {
     emptyNodes.n = LIST_MAX_NUM_NODES;
 }
 
+void initializeHeads () {
+    //treat the "Lists/heads" as another linked list
+
+    //want each head to point the i + 1 (except last)
+    for (int i = 0; i < LIST_MAX_NUM_HEADS - 1; i++) {
+        heads[i].next = &heads[i + 1];
+    }
+
+    //last points to NULL
+    heads[LIST_MAX_NUM_HEADS - 1].next = NULL;
+
+    emptyHead = &heads[0];
+
+    //set up the list that contains the headNodes that are free
+}
+
 //return NULL if no free nodes
 Node* getFreeNode() {
     if (emptyNodes.n == 0) {
@@ -137,7 +160,16 @@ Node* getFreeNode() {
 
 //finds an unused head (list), none -> return NULL
 List* getFreeHead () {
-    return NULL;
+    //check if there are any heads left
+    if (emptyHead == NULL) {
+        return NULL;
+    }
+
+    //pop
+    List *free = emptyHead;
+    emptyHead = emptyHead -> next;
+
+    return free;
 }
 
 void printNode (Node* node) {
@@ -147,4 +179,20 @@ void printNode (Node* node) {
     }
 
     printf("VAL"); //TO DO
+}
+
+void Print_all () {
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++) {
+        printNode(&nodes[i]);
+        printf("\n");
+    }
+}
+
+void Print_list (List* pList) {
+    Node* current = emptyNodes.head;
+    while (current != NULL) {
+        printNode(current);
+        printf("\n");
+        current = current->next;
+    }
 }
