@@ -23,6 +23,7 @@ List* getFreeHead();
 void sendFreeNodes(Node* start, Node* end);
 void setNext(Node* a, Node* b);
 void setEmpty(List* pList);
+void setNode(Node* node, void* pItem);
 
 void printNode(Node* node);
 void printAll();
@@ -78,9 +79,7 @@ int List_append(List* pList, void* pItem) {
     }
     
     //add val
-    free->next = NULL; //break from emptyNodes, prev should be NULL (we are taking from head)
-    free->val = pItem;
-    free->empty = false; //set as occupied
+    setNode(free, pItem);
 
     //append, condition: empty list
     if (pList->n == 0) {
@@ -95,6 +94,32 @@ int List_append(List* pList, void* pItem) {
     pList->n++;
 
     return 0;
+}
+
+int List_insert_after(List* pList, void* pItem) {
+    //emmpty list, current > n
+    if (pList->n == 0 || pList->current == (Node*)LIST_OOB_END) {
+        List_append(pList, pItem);
+    }
+
+    Node* free = getFreeNode();
+    
+    //no nodes available
+    if (free = NULL) {
+        return -1;
+    }
+
+    //add val
+    setNode(free, pItem);
+
+    //conditions:
+    //current < 0
+    if (pList->current == (Node*)LIST_OOB_START) {
+        //we will make this the new head
+        setNext(free, pList->head);
+        pList->head = free;
+    }
+
 }
 
 void* List_remove(List* pList) {
@@ -219,6 +244,12 @@ void sendFreeNodes(Node* start, Node* end) {
 void setNext (Node* a, Node* b) {
     a->next = b;
     b->prev = a;
+}
+
+void setNode(Node* node, void* pItem) {
+    node->next = NULL; //break from emptyNodes, prev should be NULL (we are taking from head)
+    node->val = pItem;
+    node->empty = false; //set as occupied
 }
 
 //finds an unused head (list), none -> return NULL
