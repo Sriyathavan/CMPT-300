@@ -15,19 +15,19 @@ List *emptyHead;
 static List heads[LIST_MAX_NUM_HEADS]; //array of heads
 
 //declarations for private functions:
-void initializeHeads();
-void initializeNodes();
-Node* getFreeNode();
-List* getFreeHead();
+static void initializeHeads();
+static void initializeNodes();
+static Node* getFreeNode();
+static List* getFreeHead();
 
-void sendFreeNodes(Node* start, Node* end);
-void setNext(Node* a, Node* b);
-void setEmpty(List* pList);
-void setNode(Node* node, void* pItem);
+static void sendFreeNodes(Node* start, Node* end);
+static void setNext(Node* a, Node* b);
+static void setEmpty(List* pList);
+static void setNode(Node* node, void* pItem);
 
-void printNode(Node* node);
-void printAll();
-void printList(List *pList);
+static void printNode(Node* node);
+void printAll(); //switch to main.c
+void printList(List *pList); //swtich to main.c
 
 //public:
 //creating a list -> we need to make the static section before doing anything
@@ -74,7 +74,7 @@ int List_append(List* pList, void* pItem) {
     Node* free = getFreeNode();
 
     //no nodes available
-    if (free = NULL) {
+    if (free == NULL) {
         return -1;
     }
     
@@ -105,7 +105,7 @@ int List_insert_after(List* pList, void* pItem) {
     Node* free = getFreeNode();
     
     //no nodes available
-    if (free = NULL) {
+    if (free == NULL) {
         return -1;
     }
 
@@ -119,7 +119,8 @@ int List_insert_after(List* pList, void* pItem) {
         setNext(free, pList->head);
         pList->head = free;
     }
-
+    
+    return 0;
 }
 
 void* List_remove(List* pList) {
@@ -282,6 +283,7 @@ void printNode (Node* node) {
     printf("VAL"); //TO DO
 }
 
+//debugger
 void Print_all () {
     for (int i = 0; i < LIST_MAX_NUM_NODES; i++) {
         printNode(&nodes[i]);
