@@ -1,5 +1,5 @@
 all:
-	gcc -g -Wall -Werror main.c list.c -o output
+	gcc -g -pedantic -Wall -Werror main.c list.c -o output
 
 clean:
 	rm output

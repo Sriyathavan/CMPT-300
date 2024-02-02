@@ -73,7 +73,7 @@ void* List_next(List* pList){
     if (pList->current == NULL) {
         //before start
         if (pList->outOfBounds == LIST_OOB_START) {
-            pList->current == pList->head;
+            pList->current = pList->head;
             return pList->current;
         }
         //after end
@@ -102,7 +102,7 @@ void* List_prev(List* pList){
     if (pList->current == NULL) {
         //after end
         if (pList->outOfBounds == LIST_OOB_END) {
-            pList->current == pList->tail;
+            pList->current = pList->tail;
             return pList->current;
         }
         //before start
@@ -111,8 +111,8 @@ void* List_prev(List* pList){
 
     //at head
     if (pList->current == pList->head) {
-        pList->current == NULL;
-        pList->outOfBounds == LIST_OOB_START;
+        pList->current = NULL;
+        pList->outOfBounds = LIST_OOB_START;
         return NULL;
     }
 
@@ -234,7 +234,7 @@ int List_insert_after(List* pList, void* pItem) {
         pList->head = free;
     } else {
         //normal functionality -> if tail -> free->next becomes NULL
-        setNext(free, pList->next);
+        setNext(free, pList->current->next);
         setNext(pList->current, free);
     }
     
@@ -267,7 +267,7 @@ int List_insert_before(List* pList, void* pItem) {
     //conditions:
     //current is before head (Out of bounds)
     if (pList->current == NULL && pList->outOfBounds == LIST_OOB_START) {
-        pList->current == pList->head; //then we will have normal behaviour
+        pList->current = pList->head; //then we will have normal behaviour
     }
 
     //inserting before head -> becomes new head
@@ -394,7 +394,7 @@ void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg) 
     //iterate until end
     while (true) {
         if (pList->current == NULL) {
-            pList->outOfBounds == LIST_OOB_END;
+            pList->outOfBounds = LIST_OOB_END;
             return NULL; //not found
         }
 
