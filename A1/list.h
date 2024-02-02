@@ -18,13 +18,14 @@ struct Node_s {
 };
 
 enum ListOutOfBounds {
-    LIST_OOB_START,
+    LIST_OOB_START, //would be 0, 1
     LIST_OOB_END
 };
 
 typedef struct List_s List;
 struct List_s{
     // TODO: You should change this!
+    enum ListOutOfBounds side; //only if current is null
     Node *current, *head, *tail;
     List *next;
     int n; //length
