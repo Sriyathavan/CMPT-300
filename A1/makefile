@@ -6,3 +6,5 @@ clean:
 
 run:
 	./output
+
+

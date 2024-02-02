@@ -3,7 +3,7 @@
 
 
 //static variables -> means internally linked (priv)
-static int uninitialized = 1, activeHeads = 0;
+static int uninitialized = 1;
 
 //statically allocated mem
 //empty nodes
@@ -25,7 +25,8 @@ static void setNext(Node* a, Node* b);
 static void setEmpty(List* pList);
 static void setNode(Node* node, void* pItem);
 
-static void printNode(Node* node);
+//these are debuigging functions (i am externally linking them to testing)
+void printNode(Node* node);
 void printAll(); //switch to main.c
 void printList(List *pList); //swtich to main.c
 
@@ -41,13 +42,12 @@ List* List_create() {
     }
 
     //check if we have room -> else: NULL
-    if (activeHeads >= LIST_MAX_NUM_HEADS) {
+    if (emptyHead == NULL) {
         return NULL;
     }
 
     //make the list (can't use new)
     List* list = getFreeHead(); //should be set as empty
-
     return list;
 }
 
@@ -56,11 +56,19 @@ int List_count(List* pList){
 }
 
 void* List_first(List* pList){
-    return pList->head; //will return NULL if empty
+    if (pList->head == NULL) {
+        return NULL;
+    }
+
+    return pList->head->val; //will return NULL if empty
 }
 
 void* List_last(List* pList){
-    return pList->tail; //will be NULL if empty
+    if (pList->tail == NULL) {
+        return NULL;
+    }
+
+    return pList->tail->val; //will be NULL if empty
 }
 
 void* List_next(List* pList){
@@ -74,7 +82,7 @@ void* List_next(List* pList){
         //before start
         if (pList->outOfBounds == LIST_OOB_START) {
             pList->current = pList->head;
-            return pList->current;
+            return pList->current->val;
         }
         //after end
         return NULL;
@@ -137,7 +145,8 @@ void List_free(List* pList, FREE_FN pItemFreeFn) {
     while (pList->current != NULL) {
         //takes pointer to the item to be freed
         (*pItemFreeFn)(pList->current->val);
-        // pList->current->val = NULL; //clear pointer
+        pList->current->val = NULL; //clear pointer
+        pList->current = pList->current->next;
     }
 
     //append the nodes to the free pool of nodes
@@ -163,14 +172,14 @@ int List_append(List* pList, void* pItem) {
 
     //append, condition: empty list
     if (pList->n == 0) {
-        pList->current = pList->head = free; //tail is set later anyways
+        pList->head = free; //tail is set later anyways
     } else {
         //last-> next = free
         setNext(pList->tail, free);
     }
     
     //edit List data
-    pList->tail = free;
+    pList->current = pList->tail = free;
     pList->n++;
 
     return 0;
@@ -238,6 +247,8 @@ int List_insert_after(List* pList, void* pItem) {
         setNext(pList->current, free);
     }
     
+    //iterate forward
+    pList->current = free;
     pList->n++; //increment size
     return 0;
 }
@@ -430,7 +441,7 @@ void initializeNodes () {
         nodes[i].next = &nodes[i + 1];
         nodes[i].prev = &nodes[i - 1];
         nodes[i].empty = true;
-        nodes[i].val = 0; //should be NULL -> trivial since our node is empty for now
+        nodes[i].val = NULL; //should be NULL -> trivial since our node is empty for now
     }
 
     //last node
@@ -509,6 +520,8 @@ List* getFreeHead () {
 
     //pop
     List *free = emptyHead;
+
+    //if last -> should become NULL
     emptyHead = emptyHead -> next;
 
     return free;
@@ -536,6 +549,7 @@ void Print_all () {
         printNode(&nodes[i]);
         printf("\n");
     }
+    printf("\n");
 }
 
 void Print_list (List* pList) {
@@ -545,4 +559,5 @@ void Print_list (List* pList) {
         printf("\n");
         current = current->next;
     }
+    printf("\n");
 }
