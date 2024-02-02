@@ -25,7 +25,7 @@ enum ListOutOfBounds {
 typedef struct List_s List;
 struct List_s{
     // TODO: You should change this!
-    enum ListOutOfBounds side; //only if current is null
+    enum ListOutOfBounds outOfBounds; //only if current is null
     Node *current, *head, *tail;
     List *next;
     int n; //length

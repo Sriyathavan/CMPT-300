@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 
-//static variables
+//static variables -> means internally linked (priv)
 static int uninitialized = 1, activeHeads = 0;
 
 //statically allocated mem
@@ -11,7 +11,7 @@ static List emptyNodes; //will take from head when removed, append new free node
 static Node nodes[LIST_MAX_NUM_NODES]; //array of nodes
 
 //when deleting push in front of emptyHead, if emptyHead = NULL -> no free heads
-List *emptyHead;
+static List *emptyHead;
 static List heads[LIST_MAX_NUM_HEADS]; //array of heads
 
 //declarations for private functions:
@@ -49,6 +49,86 @@ List* List_create() {
     List* list = getFreeHead(); //should be set as empty
 
     return list;
+}
+
+int List_count(List* pList){
+    return pList->n;
+}
+
+void* List_first(List* pList){
+    return pList->head; //will return NULL if empty
+}
+
+void* List_last(List* pList){
+    return pList->tail; //will be NULL if empty
+}
+
+void* List_next(List* pList){
+    //empty
+    if (pList->n == 0) {
+        return NULL;
+    }
+
+    //out of bounds
+    if (pList->current == NULL) {
+        //before start
+        if (pList->outOfBounds == LIST_OOB_START) {
+            pList->current == pList->head;
+            return pList->current;
+        }
+        //after end
+        return NULL;
+    }
+
+    //at the tail
+    if (pList->current == pList->tail) {
+        pList->current = NULL;
+        pList->outOfBounds = LIST_OOB_END;
+        return NULL;
+    }
+
+    //includes head -> normal behaviour
+    pList->current = pList->current->next;
+    return pList->current->val;
+}
+
+void* List_prev(List* pList){
+    //empty
+    if (pList->n == 0) {
+        return NULL;
+    }
+
+    //out of bounds
+    if (pList->current == NULL) {
+        //after end
+        if (pList->outOfBounds == LIST_OOB_END) {
+            pList->current == pList->tail;
+            return pList->current;
+        }
+        //before start
+        return NULL;
+    }
+
+    //at head
+    if (pList->current == pList->head) {
+        pList->current == NULL;
+        pList->outOfBounds == LIST_OOB_START;
+        return NULL;
+    }
+
+    //normal behaviour
+    pList->current = pList->current->prev;
+    return pList->current->val;
+    
+}
+
+void* List_curr(List* pList){
+    //empty, outOfBounds
+    if (pList->current == NULL) {
+        return NULL;
+    }
+
+    return pList->current->val;
 }
 
 void List_free(List* pList, FREE_FN pItemFreeFn) {
@@ -96,10 +176,44 @@ int List_append(List* pList, void* pItem) {
     return 0;
 }
 
+int List_prepend(List* pList, void* pItem) {
+    //find a free node
+    Node* free = getFreeNode();
+
+    //no nodes available
+    if (free == NULL) {
+        return -1;
+    }
+
+    //add val
+    setNode(free, pItem);
+
+    if (pList->n == 0) {
+        pList->current = pList->head = free; //tail is set later anyways
+    } else {
+        //last-> next = free
+        setNext(free, pList->head);
+    }
+
+    //edit list data
+    pList->head = free;
+    pList->n++;
+
+    return 0;
+}
+
+//insert after current, make it the new current
 int List_insert_after(List* pList, void* pItem) {
-    //emmpty list, current > n
-    if (pList->n == 0 || pList->current == (Node*)LIST_OOB_END) {
-        List_append(pList, pItem);
+    //emmpty list, current > n: will handle 
+    if (pList->n == 0 || (pList->current == NULL && pList->outOfBounds == LIST_OOB_END)) {
+        //need to update current
+        if (List_append(pList, pItem) == -1) {
+            return -1;
+        }
+        //trivially will be 0
+        pList->current = pList->tail; //might be done twice but it's fine
+
+        return 0;
     }
 
     Node* free = getFreeNode();
@@ -113,20 +227,69 @@ int List_insert_after(List* pList, void* pItem) {
     setNode(free, pItem);
 
     //conditions:
-    //current < 0
-    if (pList->current == (Node*)LIST_OOB_START) {
+    //current < 0 -> becomes head
+    if (pList->current == NULL && pList->outOfBounds == LIST_OOB_START) {
         //we will make this the new head
         setNext(free, pList->head);
         pList->head = free;
+    } else {
+        //normal functionality -> if tail -> free->next becomes NULL
+        setNext(free, pList->next);
+        setNext(pList->current, free);
     }
     
+    pList->n++; //increment size
     return 0;
 }
 
+//make new item the current one
+int List_insert_before(List* pList, void* pItem) {
+    //conditions: empty
+    if (pList->n == 0) {
+        return List_append(pList, pItem); //also sets current
+    }
+
+    //inserting from outofbounds end -> becomes new tail
+    if (pList->current == NULL && pList->outOfBounds == LIST_OOB_END) {
+        return List_insert_after(pList, pItem); //same functionality
+    }
+
+    Node* free = getFreeNode();
+    
+    //no nodes available
+    if (free == NULL) {
+        return -1;
+    }
+
+    //add val
+    setNode(free, pItem);
+
+    //conditions:
+    //current is before head (Out of bounds)
+    if (pList->current == NULL && pList->outOfBounds == LIST_OOB_START) {
+        pList->current == pList->head; //then we will have normal behaviour
+    }
+
+    //inserting before head -> becomes new head
+    if (pList->current == pList->head) {
+        pList->head = free;
+    }
+
+    //current = tail -> should be fine
+
+    //link
+    setNext(free, pList->current);
+    //iterate back
+    pList->current = free;
+    pList->n++;
+    return 0;
+}
+
+//removes current, to do: if we remove and it is now empty (size is 1)
 void* List_remove(List* pList) {
     //conditions:
-    //empty (current == LIST_OOB_START), before start, after start
-    if (pList->current == (Node*)LIST_OOB_START || pList->current == (Node*)LIST_OOB_END) {
+    //empty, before start, after start
+    if (pList->current == NULL) {
         return NULL;
     }
 
@@ -149,9 +312,10 @@ void* List_remove(List* pList) {
         goto end;
     }
 
-    //current == tail: will go out of bounds, tail will have to be tail-> prev
+    //current == tail: will go out of bounds end, tail will have to be tail-> prev
     if (pList->current == pList->tail) {
-        pList->current = (Node*)LIST_OOB_END;
+        pList->current = NULL;
+        pList->outOfBounds = LIST_OOB_END;
         pList->tail = pList->tail->prev;
         goto end;
     }
@@ -165,10 +329,87 @@ void* List_remove(List* pList) {
         //send free node back to pool
         sendFreeNodes(free, free);
         //update pList
-        pList->n++;
+        pList->n--;
     }
 
     return item;
+}
+
+//basically pop last, return NULL if empty
+void* List_trim(List* pList) {
+    //empty;
+    if (pList->n == 0) {
+        return NULL;
+    }
+
+    Node* temp = pList->current;
+    pList->current = pList->tail;
+
+    void* item = List_remove(pList);
+
+    pList->current = temp;
+
+    return item;
+}
+
+//can't use free -> still need those nodes
+void List_concat(List* pList1, List* pList2) {
+    //if pList1 is empty -> current = head pList2
+    if (pList1->n == 0) {
+        pList1->current = pList2->head;
+    } else {
+        //if list2 is empty -> will just point to NULL
+        pList1->tail->next = pList2->head;
+        //current stays the same as pList1
+    }
+
+    //combine lengths
+    pList1->n += pList2->n;
+
+    //set tail (if 2 is empty-> remain tail the same)
+    if (pList2->n != 0) {
+        pList1->tail = pList2->tail;
+    }
+
+    setEmpty(pList2); //clear out pList2
+    emptyHead->next = pList2; //add it back to pool
+}
+
+void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg) {
+    //condition: empty
+    if (pList->n == 0) {
+        return NULL;
+    }
+
+    //current out of bounds
+    if (pList->current == NULL) {
+        //past end
+        if (pList->outOfBounds == LIST_OOB_END) {
+            return NULL;
+        }
+        //before start
+        pList->current = pList->head;
+    }
+
+    //iterate until end
+    while (true) {
+        if (pList->current == NULL) {
+            pList->outOfBounds == LIST_OOB_END;
+            return NULL; //not found
+        }
+
+        //if match -> returns 1
+        bool match = pComparator(pList->current->val, pComparisonArg);
+        if (match) {
+            return pList->current->val;
+        }
+
+        //else -> iterate
+        pList->current = pList->current->next; //if NULL -> handled
+    }
+
+    //should not reach
+    return NULL;
 }
 
 //private:
@@ -243,8 +484,14 @@ void sendFreeNodes(Node* start, Node* end) {
 
 //will link prev and next for 2 nodes
 void setNext (Node* a, Node* b) {
-    a->next = b;
-    b->prev = a;
+    //safety
+    if (a != NULL) {
+        a->next = b;
+    }
+    
+    if (b != NULL) {
+        b->prev = a;
+    }
 }
 
 void setNode(Node* node, void* pItem) {
@@ -268,7 +515,7 @@ List* getFreeHead () {
 }
 
 void setEmpty (List* pList) {
-    pList->current = (Node*)LIST_OOB_START;
+    pList->current = NULL;
     pList->head = NULL;
     pList->tail = NULL;
     pList->n = 0;
